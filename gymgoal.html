@@ -1,0 +1,2091 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0a0a" />
+<title>GymGoal — 総重量目標トラッカー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --bg-elev: #141414;
+    --bg-card: #1a1a1a;
+    --line: #2a2a2a;
+    --line-strong: #3a3a3a;
+    --ink: #f5f5f5;
+    --ink-dim: #9a9a9a;
+    --ink-faint: #5a5a5a;
+    --accent: #d4ff3a;
+    --accent-dim: #8aa820;
+    --warn: #ff8a3a;
+    --good: #d4ff3a;
+    --bad: #ff5e5e;
+    --free: #6ab8ff;
+    --display: 'Bebas Neue', 'Noto Sans JP', sans-serif;
+    --body: 'Noto Sans JP', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--ink); font-family: var(--body); }
+  body {
+    min-height: 100dvh;
+    padding: 0 0 90px;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(212,255,58,0.04), transparent 40%),
+      radial-gradient(circle at 80% 100%, rgba(212,255,58,0.03), transparent 50%);
+  }
+  body.free-mode {
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(106,184,255,0.04), transparent 40%),
+      radial-gradient(circle at 80% 100%, rgba(106,184,255,0.03), transparent 50%);
+  }
+  button { font-family: inherit; cursor: pointer; }
+  input, select, textarea { font-family: inherit; }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type="number"] { -moz-appearance: textfield; }
+
+  /* ---------- header ---------- */
+  header {
+    padding: 20px 20px 12px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+  header h1 {
+    font-family: var(--display);
+    font-size: 30px;
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+  header h1 .dot { color: var(--accent); }
+  body.free-mode header h1 .dot { color: var(--free); }
+  header .diff-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border: 1px solid var(--line-strong);
+    padding: 4px 8px;
+    border-radius: 2px;
+  }
+  header .diff-badge b { color: var(--accent); }
+  body.free-mode header .diff-badge b { color: var(--free); }
+
+  /* ---------- tabs ---------- */
+  nav.tabs {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: var(--bg-elev);
+    border-top: 1px solid var(--line);
+    z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  nav.tabs button {
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    padding: 12px 4px 14px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-top: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  nav.tabs button .icon { font-size: 18px; line-height: 1; }
+  nav.tabs button.active {
+    color: var(--accent);
+    border-top-color: var(--accent);
+  }
+  body.free-mode nav.tabs button.active {
+    color: var(--free);
+    border-top-color: var(--free);
+  }
+
+  /* ---------- generic ---------- */
+  main { padding: 20px; max-width: 720px; margin: 0 auto; }
+  main > section { display: none; }
+  main > section.active { display: block; animation: fade 0.2s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px);} to {opacity:1; transform:none;} }
+
+  h2.section-title {
+    font-family: var(--display);
+    font-size: 22px;
+    letter-spacing: 0.05em;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  h2.section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  /* ---------- big daily target ---------- */
+  .daily-target {
+    border: 1px solid var(--line);
+    background: var(--bg-card);
+    border-radius: 6px;
+    padding: 22px 20px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .daily-target.achieved { border-color: var(--accent); }
+  body.free-mode .daily-target { border-color: var(--free); }
+  .daily-target::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 60%, rgba(212,255,58,0.05) 100%);
+    pointer-events: none;
+  }
+  body.free-mode .daily-target::before {
+    background: linear-gradient(135deg, transparent 60%, rgba(106,184,255,0.05) 100%);
+  }
+  .daily-target .top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+  }
+  .daily-target .lab {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-dim);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .daily-target .day-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+  }
+  .daily-target .nums {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .daily-target .actual {
+    font-family: var(--display);
+    font-size: 56px;
+    color: var(--ink);
+    line-height: 1;
+    letter-spacing: 0.02em;
+  }
+  .daily-target.achieved .actual { color: var(--accent); }
+  body.free-mode .daily-target .actual { color: var(--free); }
+  .daily-target .slash {
+    font-family: var(--display);
+    font-size: 32px;
+    color: var(--ink-faint);
+    line-height: 1;
+  }
+  .daily-target .target {
+    font-family: var(--display);
+    font-size: 32px;
+    color: var(--ink-dim);
+    line-height: 1;
+  }
+  .daily-target .unit {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-dim);
+  }
+  .daily-target .progress {
+    height: 6px;
+    background: var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+    margin-top: 14px;
+  }
+  .daily-target .progress-bar {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: var(--accent);
+    transition: width 0.3s ease;
+  }
+  body.free-mode .daily-target .progress-bar { background: var(--free); }
+  .daily-target .meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-dim);
+    margin-top: 8px;
+  }
+  .daily-target .meta .pct.achieved { color: var(--accent); font-weight: 600; }
+
+  .free-banner {
+    background: rgba(106,184,255,0.08);
+    border: 1px solid var(--free);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .free-banner .ico {
+    font-size: 22px;
+    color: var(--free);
+  }
+  .free-banner .text {
+    font-size: 13px;
+    color: var(--ink-dim);
+  }
+  .free-banner .text b { color: var(--free); }
+
+  /* ---------- exercise card ---------- */
+  .ex-card {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .ex-card:hover { border-color: var(--line-strong); }
+  .ex-card .name {
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .ex-card .meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-dim);
+    margin-top: 2px;
+  }
+  .ex-card .arrow {
+    color: var(--ink-faint);
+    font-size: 18px;
+  }
+  .ex-card .today-amount {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  body.free-mode .ex-card .today-amount { color: var(--free); }
+
+  /* ---------- detail view ---------- */
+  .detail-back {
+    background: none;
+    border: none;
+    color: var(--ink-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+    padding: 4px 0;
+  }
+  .detail-back:hover { color: var(--accent); }
+
+  .remaining-box {
+    border: 1px solid var(--line);
+    background: var(--bg-card);
+    border-radius: 4px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+  }
+  .remaining-box .lab {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-dim);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .remaining-box .val {
+    font-family: var(--display);
+    font-size: 36px;
+    color: var(--accent);
+    line-height: 1;
+    letter-spacing: 0.02em;
+  }
+  .remaining-box .val.done { color: var(--ink-faint); }
+  .remaining-box .unit {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-dim);
+  }
+  .remaining-box .sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin-top: 6px;
+  }
+
+  .input-group { margin-bottom: 14px; }
+  .input-group label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .input-group input,
+  .input-group textarea,
+  .input-group select {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 14px;
+    border-radius: 4px;
+    font-size: 16px;
+    font-family: var(--mono);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .input-group input:focus,
+  .input-group textarea:focus,
+  .input-group select:focus {
+    border-color: var(--accent);
+  }
+  body.free-mode .input-group input:focus,
+  body.free-mode .input-group textarea:focus,
+  body.free-mode .input-group select:focus {
+    border-color: var(--free);
+  }
+
+  .reps-result {
+    border: 1px solid var(--accent);
+    background: rgba(212, 255, 58, 0.06);
+    border-radius: 4px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  body.free-mode .reps-result {
+    border-color: var(--free);
+    background: rgba(106,184,255,0.06);
+  }
+  .reps-result .lab {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .reps-result .val {
+    font-family: var(--display);
+    font-size: 48px;
+    color: var(--accent);
+    line-height: 1;
+    letter-spacing: 0.02em;
+  }
+  body.free-mode .reps-result .val { color: var(--free); }
+  .reps-result .unit {
+    font-family: var(--mono);
+    color: var(--accent-dim);
+    font-size: 13px;
+    margin-left: 4px;
+  }
+  .reps-result.empty { border-color: var(--line); background: var(--bg-card); }
+  .reps-result.empty .val { color: var(--ink-faint); }
+  .reps-result .formula {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin-top: 4px;
+  }
+
+  /* ---------- buttons ---------- */
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 600;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--bg);
+    transition: opacity 0.15s, transform 0.05s;
+  }
+  body.free-mode .btn {
+    border-color: var(--free);
+    background: var(--free);
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn.secondary {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--line-strong);
+  }
+  body.free-mode .btn.secondary {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--line-strong);
+  }
+  .btn.secondary:hover { border-color: var(--ink-dim); opacity: 1; }
+  .btn.danger {
+    background: transparent;
+    color: var(--bad);
+    border-color: var(--bad);
+  }
+
+  /* ---------- log items ---------- */
+  .log-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .log-item:last-child { border-bottom: none; }
+  .log-item .left .date {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-dim);
+    margin-bottom: 2px;
+  }
+  .log-item .left .body { font-size: 14px; }
+  .log-item .delete-log {
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    font-size: 14px;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+  .log-item .delete-log:hover { color: var(--bad); }
+
+  /* ---------- exercise manage ---------- */
+  .ex-manage-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    margin-bottom: 8px;
+    background: var(--bg-card);
+  }
+  .ex-manage-item .info .name { font-weight: 700; }
+  .ex-manage-item .info .meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-dim);
+    margin-top: 2px;
+  }
+  .delete-btn {
+    background: none;
+    border: 1px solid var(--line-strong);
+    color: var(--bad);
+    width: 36px;
+    height: 36px;
+    border-radius: 4px;
+    font-size: 16px;
+  }
+  .delete-btn:hover { border-color: var(--bad); }
+
+  /* ---------- difficulty options ---------- */
+  .diff-option {
+    border: 1px solid var(--line);
+    background: var(--bg-card);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .diff-option:hover { border-color: var(--line-strong); }
+  .diff-option.selected {
+    border-color: var(--accent);
+    background: rgba(212, 255, 58, 0.04);
+  }
+  .diff-option.selected.free {
+    border-color: var(--free);
+    background: rgba(106, 184, 255, 0.04);
+  }
+  .diff-option .head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .diff-option .name {
+    font-family: var(--display);
+    font-size: 22px;
+    letter-spacing: 0.04em;
+  }
+  .diff-option.selected .name { color: var(--accent); }
+  .diff-option.selected.free .name { color: var(--free); }
+  .diff-option .params {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-dim);
+  }
+  .diff-option .desc {
+    font-size: 13px;
+    color: var(--ink-dim);
+    margin-top: 4px;
+  }
+
+  /* ---------- modal ---------- */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 8px 8px 0 0;
+    width: 100%;
+    max-width: 720px;
+    padding: 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    max-height: 90dvh;
+    overflow-y: auto;
+    animation: slideup 0.25s ease;
+  }
+  @keyframes slideup { from { transform: translateY(100%);} to {transform: none;}}
+  .modal h3 {
+    font-family: var(--display);
+    font-size: 24px;
+    letter-spacing: 0.04em;
+    margin-bottom: 12px;
+  }
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .modal-actions .btn { flex: 1; }
+
+  /* ---------- onboarding ---------- */
+  #onboarding {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 30px 20px 40px;
+    display: none;
+  }
+  #onboarding.open { display: block; }
+  #onboarding .ob-inner {
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  #onboarding .step-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  #onboarding h2 {
+    font-family: var(--display);
+    font-size: 36px;
+    letter-spacing: 0.04em;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  #onboarding p.lead {
+    color: var(--ink-dim);
+    line-height: 1.7;
+    margin-bottom: 24px;
+    font-size: 14px;
+  }
+  .ob-step { display: none; }
+  .ob-step.active { display: block; animation: fade 0.25s ease; }
+  .ob-set-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: stretch;
+  }
+  .ob-set-row input {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 10px 12px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 14px;
+    outline: none;
+    width: 100%;
+  }
+  .ob-set-row input:focus { border-color: var(--accent); }
+  .ob-set-row .delete-btn { width: 40px; height: 40px; }
+  .ob-headers {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    padding: 0 4px;
+  }
+  .ob-headers > span:last-child { width: 40px; }
+  .ob-add-link {
+    background: none;
+    border: 1px dashed var(--line-strong);
+    color: var(--ink-dim);
+    padding: 10px;
+    width: 100%;
+    border-radius: 4px;
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .ob-add-link:hover { border-color: var(--accent); color: var(--accent); }
+  .ob-summary {
+    border: 1px solid var(--accent);
+    background: rgba(212,255,58,0.06);
+    border-radius: 6px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+  }
+  .ob-summary .lab {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-dim);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .ob-summary .val {
+    font-family: var(--display);
+    font-size: 56px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .ob-summary .unit {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--ink-dim);
+    margin-left: 4px;
+  }
+  .ob-projection {
+    display: grid;
+    gap: 8px;
+    margin: 16px 0 24px;
+  }
+  .ob-proj-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 12px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .ob-proj-row.selected {
+    border-color: var(--accent);
+    background: rgba(212,255,58,0.05);
+  }
+  .ob-proj-row.selected.free {
+    border-color: var(--free);
+    background: rgba(106,184,255,0.05);
+  }
+  .ob-proj-row .name {
+    font-family: var(--display);
+    font-size: 18px;
+    letter-spacing: 0.04em;
+  }
+  .ob-proj-row.selected .name { color: var(--accent); }
+  .ob-proj-row.selected.free .name { color: var(--free); }
+  .ob-proj-row .nums {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-dim);
+  }
+  .ob-proj-row .nums b { color: var(--ink); }
+  .ob-nav { display: flex; gap: 10px; margin-top: 20px; }
+  .ob-nav .btn { flex: 1; }
+
+  /* ---------- weekly chart ---------- */
+  .chart-wrap {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .chart-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .chart-svg { width: 100%; height: 200px; display: block; }
+  .chart-legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-dim);
+    letter-spacing: 0.1em;
+  }
+  .chart-legend .swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  .legend-actual { background: var(--accent); }
+  body.free-mode .legend-actual { background: var(--free); }
+  .legend-target {
+    border: 1px dashed var(--ink-dim);
+    background: transparent;
+  }
+
+  /* ---------- stats ---------- */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .stat-cell {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 10px;
+    text-align: center;
+    background: var(--bg-card);
+  }
+  .stat-cell .label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .stat-cell .value {
+    font-family: var(--display);
+    font-size: 24px;
+    color: var(--ink);
+    letter-spacing: 0.04em;
+  }
+  .stat-cell .unit {
+    font-family: var(--mono);
+    color: var(--ink-faint);
+    font-size: 10px;
+  }
+
+  /* ---------- export ---------- */
+  .export-grid { display: grid; gap: 8px; margin-bottom: 24px; }
+  .export-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 14px 16px;
+    border-radius: 4px;
+    text-align: left;
+    transition: border-color 0.15s;
+  }
+  .export-btn:hover { border-color: var(--accent); }
+  body.free-mode .export-btn:hover { border-color: var(--free); }
+  .export-btn .label { font-weight: 700; font-size: 14px; }
+  .export-btn .meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-dim);
+    margin-top: 2px;
+  }
+  .export-btn .arrow { color: var(--accent); }
+  body.free-mode .export-btn .arrow { color: var(--free); }
+
+  /* ---------- empty / toast / misc ---------- */
+  .empty {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--ink-faint);
+  }
+  .empty .ico { font-size: 44px; margin-bottom: 10px; opacity: 0.4; }
+  .empty .title {
+    font-family: var(--display);
+    font-size: 22px;
+    letter-spacing: 0.04em;
+    color: var(--ink-dim);
+    margin-bottom: 6px;
+  }
+  .empty .desc { font-size: 13px; }
+
+  .toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-elev);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 10px 18px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    z-index: 300;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  body.free-mode .toast { border-color: var(--free); color: var(--free); }
+  .toast.show { opacity: 1; }
+
+  .helper {
+    font-size: 12px;
+    color: var(--ink-dim);
+    line-height: 1.6;
+    margin-top: 6px;
+  }
+  hr { border: none; border-top: 1px solid var(--line); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>GYMGOAL<span class="dot">.</span></h1>
+  <div class="diff-badge">難易度 <b id="diff-badge-text">中級者</b></div>
+</header>
+
+<main>
+
+  <!-- ============== HOME ============== -->
+  <section id="page-home" class="active">
+    <div id="home-content"></div>
+  </section>
+
+  <!-- ============== EXERCISE DETAIL ============== -->
+  <section id="page-detail">
+    <button class="detail-back" onclick="showPage('home')">&larr; 戻る</button>
+    <h2 class="section-title" id="detail-title">—</h2>
+
+    <div class="remaining-box" id="remaining-box"></div>
+
+    <div class="input-group">
+      <label>使う重量 (kg)</label>
+      <input type="number" id="detail-weight" inputmode="decimal" placeholder="例: 60" step="0.5" />
+    </div>
+
+    <div class="reps-result" id="detail-reps-result">
+      <div>
+        <div class="lab">必要 rep 数</div>
+        <div class="formula" id="detail-formula">重量を入力してください</div>
+      </div>
+      <div><span class="val" id="detail-reps">—</span><span class="unit">REPS</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>実際にやった rep 数（既定: 必要 rep 数）</label>
+      <input type="number" id="detail-actual-reps" inputmode="numeric" />
+    </div>
+
+    <button class="btn" id="detail-save-btn" onclick="saveLog()">この種目を記録する</button>
+
+    <div id="detail-history" style="margin-top: 24px;"></div>
+  </section>
+
+  <!-- ============== EXERCISES MANAGE ============== -->
+  <section id="page-exercises">
+    <h2 class="section-title">種目の管理</h2>
+    <button class="btn" onclick="openAddExercise()" style="margin-bottom: 16px;">＋ 種目を追加</button>
+    <div id="ex-list"></div>
+  </section>
+
+  <!-- ============== HISTORY / EXPORT ============== -->
+  <section id="page-history">
+    <h2 class="section-title">週次グラフ</h2>
+    <div id="weekly-chart"></div>
+
+    <h2 class="section-title">統計</h2>
+    <div class="stats-row" id="stats-row"></div>
+
+    <h2 class="section-title">書き出し</h2>
+    <div class="export-grid">
+      <button class="export-btn" onclick="exportCSV('week')">
+        <div>
+          <div class="label">直近 1 週間 CSV</div>
+          <div class="meta" id="cnt-week">— 件</div>
+        </div>
+        <div class="arrow">↓</div>
+      </button>
+      <button class="export-btn" onclick="exportCSV('month')">
+        <div>
+          <div class="label">直近 1 か月 CSV</div>
+          <div class="meta" id="cnt-month">— 件</div>
+        </div>
+        <div class="arrow">↓</div>
+      </button>
+      <button class="export-btn" onclick="exportCSV('all')">
+        <div>
+          <div class="label">全期間 CSV</div>
+          <div class="meta" id="cnt-all">— 件</div>
+        </div>
+        <div class="arrow">↓</div>
+      </button>
+      <button class="export-btn" onclick="exportJSON()">
+        <div>
+          <div class="label">全データ JSON（バックアップ）</div>
+          <div class="meta">復元時はインポートから</div>
+        </div>
+        <div class="arrow">↓</div>
+      </button>
+    </div>
+
+    <h2 class="section-title">記録</h2>
+    <div id="history-list"></div>
+  </section>
+
+  <!-- ============== SETTINGS ============== -->
+  <section id="page-settings">
+    <h2 class="section-title">難易度</h2>
+    <div id="diff-options"></div>
+    <div class="helper">難易度を変えると、今日と今後の目標がすべて再計算されます。フリーは目標なしの記録専用モード。</div>
+
+    <hr/>
+
+    <h2 class="section-title">基準値</h2>
+    <div id="baseline-info"></div>
+    <button class="btn secondary" onclick="restartOnboarding()" style="margin-top: 12px;">基準値を再設定する</button>
+    <div class="helper">体力レベルが大きく変わったときや、最初からやり直したいときに使ってください。</div>
+
+    <hr/>
+
+    <h2 class="section-title">データ</h2>
+    <div class="input-group">
+      <label>バックアップから復元（JSON）</label>
+      <input type="file" id="import-file" accept=".json" onchange="importJSON(event)" />
+    </div>
+
+    <button class="btn danger" onclick="resetLogs()" style="margin-bottom: 8px;">記録をすべて削除</button>
+    <button class="btn danger" onclick="resetAll()">すべてのデータを削除</button>
+
+    <hr/>
+
+    <div class="helper">
+      <b>GymGoal v2.0</b> — Web版<br/>
+      データはブラウザの localStorage に保存されます。同じブラウザ・端末でアクセスしてください。<br/>
+      iOS Safari でホーム画面に追加するとアプリ風に使えます。
+    </div>
+  </section>
+
+</main>
+
+<!-- ============== TABS ============== -->
+<nav class="tabs">
+  <button class="active" data-page="home" onclick="showPage('home')">
+    <span class="icon">◎</span><span>目標</span>
+  </button>
+  <button data-page="exercises" onclick="showPage('exercises')">
+    <span class="icon">≡</span><span>種目</span>
+  </button>
+  <button data-page="history" onclick="showPage('history')">
+    <span class="icon">▤</span><span>履歴</span>
+  </button>
+  <button data-page="settings" onclick="showPage('settings')">
+    <span class="icon">⚙</span><span>設定</span>
+  </button>
+</nav>
+
+<!-- ============== ADD EXERCISE MODAL ============== -->
+<div class="modal-backdrop" id="add-modal">
+  <div class="modal">
+    <h3>種目を追加</h3>
+    <div class="input-group">
+      <label>種目名</label>
+      <input type="text" id="add-name" placeholder="例: ベンチプレス" />
+    </div>
+    <div class="input-group">
+      <label>メモ（任意）</label>
+      <textarea id="add-notes" rows="2" placeholder="マシン番号、シート位置など"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeAddExercise()">キャンセル</button>
+      <button class="btn" onclick="addExercise()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== ONBOARDING ============== -->
+<div id="onboarding">
+  <div class="ob-inner">
+
+    <div class="ob-step active" data-step="1">
+      <div class="step-num">STEP 1 / 4</div>
+      <h2>GYMGOAL へようこそ</h2>
+      <p class="lead">
+        このアプリは <b style="color:var(--accent)">1日の総重量（重量 × rep 数の合計）</b> を目標にします。<br/><br/>
+        最初に「今日の自分の実力」を入力してもらい、<br/>それを基準に明日以降の目標を計算します。<br/>
+        日によって鍛える部位が違ってもOK、その日の合計が目標を超えればクリアです。
+      </p>
+      <div class="ob-nav">
+        <button class="btn" onclick="obShowStep(2)">はじめる</button>
+      </div>
+    </div>
+
+    <div class="ob-step" data-step="2">
+      <div class="step-num">STEP 2 / 4</div>
+      <h2>今日の実力を入力</h2>
+      <p class="lead">
+        今日（または直近のジムで）<b style="color:var(--accent)">無理なくこなせる</b> セットを、種目ごとに入力してください。<br/>
+        後から種目の追加・削除はいつでもできます。
+      </p>
+
+      <div class="ob-headers">
+        <span>種目名</span>
+        <span>重量(kg)</span>
+        <span>rep 数</span>
+        <span></span>
+      </div>
+      <div id="ob-sets"></div>
+      <button class="ob-add-link" onclick="obAddSet()">＋ もう1種目追加</button>
+
+      <div class="ob-nav">
+        <button class="btn secondary" onclick="obShowStep(1)">戻る</button>
+        <button class="btn" onclick="obToStep3()">次へ</button>
+      </div>
+    </div>
+
+    <div class="ob-step" data-step="3">
+      <div class="step-num">STEP 3 / 4</div>
+      <h2>難易度を選ぶ</h2>
+      <p class="lead">
+        基準値が決まりました。難易度ごとに「明日の目標 / 30日後の目標」を予測します。
+      </p>
+
+      <div class="ob-summary">
+        <div class="lab">今日の総重量（基準値）</div>
+        <div><span class="val" id="ob-baseline">0</span><span class="unit">KG</span></div>
+      </div>
+
+      <div class="ob-projection" id="ob-projection"></div>
+
+      <div class="ob-nav">
+        <button class="btn secondary" onclick="obShowStep(2)">戻る</button>
+        <button class="btn" onclick="obToStep4()">この難易度で始める</button>
+      </div>
+    </div>
+
+    <div class="ob-step" data-step="4">
+      <div class="step-num">STEP 4 / 4</div>
+      <h2>準備完了</h2>
+      <p class="lead">
+        今日の入力は記録としても保存されます。<br/>
+        明日からは画面上部に「今日の目標」が表示され、種目を選んで重量を入れれば必要な rep 数が出ます。<br/>
+        いつでも設定タブから難易度や基準値を変更できます。
+      </p>
+
+      <div class="ob-summary" id="ob-final-summary"></div>
+
+      <div class="ob-nav">
+        <button class="btn secondary" onclick="obShowStep(3)">戻る</button>
+        <button class="btn" onclick="obFinish()">スタート</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast">記録しました</div>
+
+<script>
+/* ===========================================================
+   GymGoal v2 - Web App
+   =========================================================== */
+
+const STORAGE_KEY = 'gymgoal.v2';
+
+const DIFFICULTIES = {
+  beginner:     { name: '初心者', daily: 0.005, desc: 'ゆっくり伸ばす（+0.5%/日）', isFree: false },
+  intermediate: { name: '中級者', daily: 0.010, desc: '標準ペース（+1.0%/日）',     isFree: false },
+  advanced:     { name: '上級者', daily: 0.015, desc: '攻める（+1.5%/日）',         isFree: false },
+  free:         { name: 'フリー', daily: 0,     desc: '目標なし。自由に記録するだけ。', isFree: true },
+};
+
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) { console.warn(e); }
+  return {
+    exercises: [],
+    logs: [],
+    difficulty: 'intermediate',
+    baselineDate: null,
+    baselineTotal: 0,
+    onboarded: false,
+  };
+}
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+// ---------- helpers ----------
+function todayISO() { return new Date().toISOString().slice(0,10); }
+function fmt(n, d=1) { return Number(n).toFixed(d); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+function daysBetween(fromISO, toISO) {
+  const a = new Date(fromISO + 'T00:00:00');
+  const b = new Date(toISO   + 'T00:00:00');
+  return Math.max(0, Math.round((b - a) / 86400000));
+}
+
+/** 指定日の目標 1日総重量 */
+function dailyTargetTotal(dateISO) {
+  if (!state.baselineDate || !state.baselineTotal) return 0;
+  const diff = DIFFICULTIES[state.difficulty];
+  if (diff.isFree) return 0;
+  const days = daysBetween(state.baselineDate, dateISO);
+  return state.baselineTotal * Math.pow(1 + diff.daily, days);
+}
+
+function actualTotalOn(dateISO) {
+  return state.logs
+    .filter(l => l.date === dateISO)
+    .reduce((s, l) => s + l.actualTotal, 0);
+}
+
+function remainingFor(dateISO) {
+  return Math.max(0, dailyTargetTotal(dateISO) - actualTotalOn(dateISO));
+}
+
+function requiredReps(weight, target) {
+  if (!weight || weight <= 0 || !target || target <= 0) return 0;
+  return Math.ceil(target / weight);
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 1300);
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function applyFreeMode() {
+  document.body.classList.toggle('free-mode', state.difficulty === 'free');
+}
+
+// ---------- navigation ----------
+let currentDetailExId = null;
+
+function showPage(name) {
+  document.querySelectorAll('main > section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+  if (name === 'detail') {
+    document.getElementById('page-detail').classList.add('active');
+    document.querySelector('nav.tabs button[data-page="home"]').classList.add('active');
+  } else {
+    document.getElementById('page-' + name).classList.add('active');
+    const tab = document.querySelector(`nav.tabs button[data-page="${name}"]`);
+    if (tab) tab.classList.add('active');
+  }
+  if (name === 'home')      renderHome();
+  if (name === 'exercises') renderExerciseManage();
+  if (name === 'history')   renderHistory();
+  if (name === 'settings')  renderSettings();
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+// ===========================================================
+// ONBOARDING
+// ===========================================================
+let obSets = [];
+let obBaseline = 0;
+
+function startOnboarding(prefill = false) {
+  if (prefill && state.exercises.length > 0) {
+    obSets = state.exercises.slice(0, 5).map(ex => ({ name: ex.name, weight: '', reps: '' }));
+  } else {
+    obSets = [
+      { name: '', weight: '', reps: '' },
+      { name: '', weight: '', reps: '' },
+    ];
+  }
+  document.getElementById('onboarding').classList.add('open');
+  obShowStep(1);
+  renderObSets();
+}
+
+function obShowStep(n) {
+  document.querySelectorAll('#onboarding .ob-step').forEach(el => {
+    el.classList.toggle('active', Number(el.dataset.step) === n);
+  });
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+function renderObSets() {
+  const wrap = document.getElementById('ob-sets');
+  wrap.innerHTML = obSets.map((s, i) => `
+    <div class="ob-set-row">
+      <input type="text" placeholder="種目名" value="${escapeHtml(s.name)}"
+        oninput="obSets[${i}].name=this.value" />
+      <input type="number" placeholder="kg" inputmode="decimal" step="0.5" value="${s.weight}"
+        oninput="obSets[${i}].weight=this.value" />
+      <input type="number" placeholder="reps" inputmode="numeric" value="${s.reps}"
+        oninput="obSets[${i}].reps=this.value" />
+      <button class="delete-btn" onclick="obRemoveSet(${i})">×</button>
+    </div>
+  `).join('');
+}
+function obAddSet() {
+  obSets.push({ name: '', weight: '', reps: '' });
+  renderObSets();
+}
+function obRemoveSet(i) {
+  if (obSets.length <= 1) return;
+  obSets.splice(i, 1);
+  renderObSets();
+}
+
+function obToStep3() {
+  const valid = obSets.filter(s => s.name.trim() && parseFloat(s.weight) > 0 && parseInt(s.reps,10) > 0);
+  if (valid.length === 0) {
+    alert('1つ以上、種目名・重量・rep 数 をすべて入力してください。');
+    return;
+  }
+  obBaseline = valid.reduce((sum, s) =>
+    sum + parseFloat(s.weight) * parseInt(s.reps, 10), 0);
+
+  document.getElementById('ob-baseline').textContent = fmt(obBaseline, 0);
+  renderObProjection();
+  obShowStep(3);
+}
+
+function renderObProjection() {
+  const proj = document.getElementById('ob-projection');
+  proj.innerHTML = Object.entries(DIFFICULTIES).map(([key, d]) => {
+    const tomorrowVal = obBaseline * Math.pow(1 + d.daily, 1);
+    const in30 = obBaseline * Math.pow(1 + d.daily, 30);
+    const sel = state.difficulty === key ? 'selected' : '';
+    const freeCls = d.isFree ? 'free' : '';
+    return `
+      <div class="ob-proj-row ${sel} ${freeCls}" onclick="obSelectDifficulty('${key}')">
+        <div class="name">${d.name}</div>
+        <div class="nums">
+          ${d.isFree
+            ? '目標なし'
+            : `明日 <b>${fmt(tomorrowVal,0)}</b> kg / 30日後 <b>${fmt(in30,0)}</b> kg`}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function obSelectDifficulty(key) {
+  state.difficulty = key;
+  renderObProjection();
+}
+
+function obToStep4() {
+  const d = DIFFICULTIES[state.difficulty];
+  const tomorrow = d.isFree ? 0 : obBaseline * Math.pow(1 + d.daily, 1);
+
+  document.getElementById('ob-final-summary').innerHTML = `
+    <div class="lab">難易度</div>
+    <div style="font-family:var(--display); font-size:36px; color:var(--accent); margin: 6px 0 16px;">
+      ${d.name}
+    </div>
+    <div class="lab">明日の目標 1日総重量</div>
+    <div><span class="val">${d.isFree ? '—' : fmt(tomorrow, 0)}</span><span class="unit">${d.isFree ? '' : 'KG'}</span></div>
+  `;
+  obShowStep(4);
+}
+
+function obFinish() {
+  const valid = obSets.filter(s => s.name.trim() && parseFloat(s.weight) > 0 && parseInt(s.reps,10) > 0);
+  const today = todayISO();
+
+  // create new exercises (preserve existing ones)
+  const existingNames = new Set(state.exercises.map(e => e.name));
+  for (const s of valid) {
+    if (!existingNames.has(s.name.trim())) {
+      state.exercises.push({
+        id: uid(),
+        name: s.name.trim(),
+        notes: '',
+        createdAt: Date.now(),
+      });
+    }
+  }
+
+  // remove logs from today's date if re-onboarding (avoid duplicates)
+  state.logs = state.logs.filter(l => l.date !== today);
+
+  // insert today's logs
+  for (const s of valid) {
+    const ex = state.exercises.find(e => e.name === s.name.trim());
+    if (!ex) continue;
+    const w = parseFloat(s.weight);
+    const r = parseInt(s.reps, 10);
+    state.logs.push({
+      id: uid(),
+      exId: ex.id,
+      date: today,
+      weight: w,
+      reps: r,
+      targetTotal: 0,
+      actualTotal: w * r,
+      createdAt: Date.now(),
+    });
+  }
+
+  state.baselineDate = today;
+  state.baselineTotal = obBaseline;
+  state.onboarded = true;
+
+  saveState();
+  applyFreeMode();
+  document.getElementById('onboarding').classList.remove('open');
+  document.getElementById('diff-badge-text').textContent = DIFFICULTIES[state.difficulty].name;
+  showPage('home');
+  toast('スタート');
+}
+
+function restartOnboarding() {
+  if (!confirm('基準値を再設定します。\n（種目と過去の記録は残ります。今日のデータがあれば再入力で上書きされます）')) return;
+  startOnboarding(true);
+}
+
+// ===========================================================
+// HOME
+// ===========================================================
+function renderHome() {
+  applyFreeMode();
+  document.getElementById('diff-badge-text').textContent =
+    DIFFICULTIES[state.difficulty].name;
+
+  const wrap = document.getElementById('home-content');
+  const isFree = state.difficulty === 'free';
+  const today = todayISO();
+  const target = dailyTargetTotal(today);
+  const actual = actualTotalOn(today);
+  const remaining = Math.max(0, target - actual);
+  const pct = target > 0 ? Math.min(100, (actual / target) * 100) : 0;
+  const days = state.baselineDate ? daysBetween(state.baselineDate, today) + 1 : 1;
+  const achieved = !isFree && actual >= target && target > 0;
+
+  let html = '';
+  if (isFree) {
+    html += `
+      <div class="free-banner">
+        <div class="ico">∞</div>
+        <div class="text">
+          <b>フリーモード</b>: 目標なしで自由に記録できます。難易度を変えると通常モードに戻ります。
+        </div>
+      </div>
+      <div class="daily-target">
+        <div class="top-row">
+          <div class="lab">本日の総重量</div>
+          <div class="day-tag">${today}</div>
+        </div>
+        <div class="nums">
+          <span class="actual">${fmt(actual, 0)}</span>
+          <span class="unit">KG</span>
+        </div>
+        <div class="meta">
+          <span>セット数: ${state.logs.filter(l => l.date === today).length}</span>
+        </div>
+      </div>`;
+  } else {
+    html += `
+      <div class="daily-target ${achieved ? 'achieved' : ''}">
+        <div class="top-row">
+          <div class="lab">今日の目標 / 実績</div>
+          <div class="day-tag">DAY ${days}</div>
+        </div>
+        <div class="nums">
+          <span class="actual">${fmt(actual, 0)}</span>
+          <span class="slash">/</span>
+          <span class="target">${fmt(target, 0)}</span>
+          <span class="unit">KG</span>
+        </div>
+        <div class="progress"><div class="progress-bar" style="width:${pct}%"></div></div>
+        <div class="meta">
+          <span>残り ${fmt(remaining, 0)} kg</span>
+          <span class="pct ${achieved ? 'achieved' : ''}">${fmt(pct, 0)}% ${achieved ? '✓ 達成' : ''}</span>
+        </div>
+      </div>`;
+  }
+
+  if (state.exercises.length === 0) {
+    html += `
+      <div class="empty">
+        <div class="ico">▱</div>
+        <div class="title">種目がありません</div>
+        <div class="desc">「種目」タブから追加してください。</div>
+      </div>`;
+  } else {
+    html += `<h2 class="section-title">種目</h2>`;
+    html += state.exercises.map(ex => {
+      const todays = state.logs.filter(l => l.exId === ex.id && l.date === today);
+      const sumToday = todays.reduce((s, l) => s + l.actualTotal, 0);
+      const setCount = todays.length;
+      return `
+        <div class="ex-card" onclick="openDetail('${ex.id}')">
+          <div>
+            <div class="name">${escapeHtml(ex.name)}</div>
+            ${setCount > 0
+              ? `<div class="meta">本日 ${setCount} セット</div>`
+              : `<div class="meta">未記録</div>`}
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            ${sumToday > 0 ? `<span class="today-amount">${fmt(sumToday, 0)} kg</span>` : ''}
+            <span class="arrow">›</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  wrap.innerHTML = html;
+}
+
+// ===========================================================
+// EXERCISE DETAIL
+// ===========================================================
+function openDetail(exId) {
+  currentDetailExId = exId;
+  document.getElementById('detail-weight').value = '';
+  document.getElementById('detail-actual-reps').value = '';
+  showPage('detail');
+  renderDetail();
+}
+
+function renderDetail() {
+  const ex = state.exercises.find(e => e.id === currentDetailExId);
+  if (!ex) return showPage('home');
+
+  const today = todayISO();
+  const isFree = state.difficulty === 'free';
+  const target = dailyTargetTotal(today);
+  const actual = actualTotalOn(today);
+  const remaining = Math.max(0, target - actual);
+
+  document.getElementById('detail-title').textContent = ex.name;
+
+  const box = document.getElementById('remaining-box');
+  if (isFree) {
+    box.innerHTML = `
+      <div class="lab">本日の総重量（フリーモード）</div>
+      <div><span class="val" style="color:var(--free)">${fmt(actual, 0)}</span><span class="unit"> kg</span></div>
+      <div class="sub">セット数: ${state.logs.filter(l => l.date === today).length}</div>`;
+  } else if (remaining <= 0) {
+    box.innerHTML = `
+      <div class="lab">残り目標</div>
+      <div><span class="val done">0</span><span class="unit"> kg</span></div>
+      <div class="sub" style="color:var(--accent)">✓ 今日の目標を達成済み (${fmt(actual,0)} / ${fmt(target,0)} kg)</div>`;
+  } else {
+    box.innerHTML = `
+      <div class="lab">残り目標</div>
+      <div><span class="val">${fmt(remaining, 0)}</span><span class="unit"> kg</span></div>
+      <div class="sub">本日 ${fmt(actual, 0)} / ${fmt(target, 0)} kg まで完了</div>`;
+  }
+
+  updateRepsResult();
+
+  const logs = state.logs
+    .filter(l => l.exId === ex.id)
+    .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt)
+    .slice(0, 12);
+
+  const hist = document.getElementById('detail-history');
+  if (logs.length === 0) {
+    hist.innerHTML = '';
+  } else {
+    hist.innerHTML = `
+      <h2 class="section-title">この種目の履歴</h2>
+      <div style="background:var(--bg-card); border:1px solid var(--line); border-radius:4px; padding:4px 16px;">
+        ${logs.map(l => `
+          <div class="log-item">
+            <div class="left">
+              <div class="date">${l.date}</div>
+              <div class="body">${fmt(l.weight,1)} kg × ${l.reps} = <b>${fmt(l.actualTotal,0)} kg</b></div>
+            </div>
+            <button class="delete-log" onclick="deleteLog('${l.id}')" title="削除">×</button>
+          </div>
+        `).join('')}
+      </div>`;
+  }
+}
+
+function updateRepsResult() {
+  const isFree = state.difficulty === 'free';
+  const today = todayISO();
+  const remaining = remainingFor(today);
+  const w = parseFloat(document.getElementById('detail-weight').value);
+  const result = document.getElementById('detail-reps-result');
+  const repsEl = document.getElementById('detail-reps');
+  const formula = document.getElementById('detail-formula');
+
+  if (!w || w <= 0) {
+    result.classList.add('empty');
+    repsEl.textContent = '—';
+    formula.textContent = '重量を入力してください';
+    document.getElementById('detail-save-btn').disabled = true;
+    return;
+  }
+  document.getElementById('detail-save-btn').disabled = false;
+
+  if (isFree) {
+    result.classList.add('empty');
+    repsEl.textContent = '—';
+    formula.textContent = `フリーモード: 任意の rep 数で記録してください`;
+    return;
+  }
+
+  if (remaining <= 0) {
+    result.classList.add('empty');
+    repsEl.textContent = '0';
+    formula.textContent = '今日の目標は既に達成済みです（追加で記録は可能）';
+    return;
+  }
+
+  const reps = requiredReps(w, remaining);
+  result.classList.remove('empty');
+  repsEl.textContent = reps;
+  formula.textContent = `${fmt(w,1)} kg × ${reps} reps = ${fmt(w*reps,1)} kg ≧ 残り ${fmt(remaining,0)} kg`;
+}
+
+function saveLog() {
+  const ex = state.exercises.find(e => e.id === currentDetailExId);
+  if (!ex) return;
+  const w = parseFloat(document.getElementById('detail-weight').value);
+  if (!w || w <= 0) return;
+
+  const today = todayISO();
+  const remaining = remainingFor(today);
+  const requiredR = requiredReps(w, remaining);
+  const actualRRaw = document.getElementById('detail-actual-reps').value;
+
+  let actualR;
+  if (actualRRaw !== '') {
+    actualR = parseInt(actualRRaw, 10);
+  } else if (state.difficulty === 'free' || requiredR <= 0) {
+    alert('rep 数を入力してください。');
+    return;
+  } else {
+    actualR = requiredR;
+  }
+
+  if (!Number.isFinite(actualR) || actualR <= 0) {
+    alert('有効な rep 数を入力してください。');
+    return;
+  }
+
+  state.logs.push({
+    id: uid(),
+    exId: ex.id,
+    date: today,
+    weight: w,
+    reps: actualR,
+    targetTotal: dailyTargetTotal(today),
+    actualTotal: w * actualR,
+    createdAt: Date.now(),
+  });
+  saveState();
+  toast('記録しました');
+
+  document.getElementById('detail-weight').value = '';
+  document.getElementById('detail-actual-reps').value = '';
+  renderDetail();
+}
+
+function deleteLog(logId) {
+  if (!confirm('この記録を削除しますか？')) return;
+  state.logs = state.logs.filter(l => l.id !== logId);
+  saveState();
+  renderDetail();
+}
+
+// ===========================================================
+// EXERCISES MANAGE
+// ===========================================================
+function renderExerciseManage() {
+  const list = document.getElementById('ex-list');
+  if (state.exercises.length === 0) {
+    list.innerHTML = `
+      <div class="empty">
+        <div class="ico">＋</div>
+        <div class="title">種目を追加</div>
+        <div class="desc">マシン種目やフリーウェイト種目を登録できます。</div>
+      </div>`;
+    return;
+  }
+  list.innerHTML = state.exercises.map(ex => {
+    const totalLogs = state.logs.filter(l => l.exId === ex.id).length;
+    return `
+      <div class="ex-manage-item">
+        <div class="info">
+          <div class="name">${escapeHtml(ex.name)}</div>
+          <div class="meta">記録 ${totalLogs} 件</div>
+          ${ex.notes ? `<div class="meta" style="color:var(--ink-faint);">${escapeHtml(ex.notes)}</div>` : ''}
+        </div>
+        <button class="delete-btn" onclick="deleteExercise('${ex.id}')">×</button>
+      </div>`;
+  }).join('');
+}
+
+function openAddExercise() {
+  document.getElementById('add-name').value = '';
+  document.getElementById('add-notes').value = '';
+  document.getElementById('add-modal').classList.add('open');
+  setTimeout(() => document.getElementById('add-name').focus(), 100);
+}
+function closeAddExercise() {
+  document.getElementById('add-modal').classList.remove('open');
+}
+
+function addExercise() {
+  const name = document.getElementById('add-name').value.trim();
+  const notes = document.getElementById('add-notes').value.trim();
+  if (!name) {
+    alert('種目名を入力してください。');
+    return;
+  }
+  state.exercises.push({
+    id: uid(),
+    name,
+    notes,
+    createdAt: Date.now(),
+  });
+  saveState();
+  closeAddExercise();
+  toast('種目を追加');
+  renderExerciseManage();
+}
+
+function deleteExercise(id) {
+  const ex = state.exercises.find(e => e.id === id);
+  if (!ex) return;
+  if (!confirm(`「${ex.name}」を削除しますか？\nこの種目の記録もすべて削除されます。`)) return;
+  state.exercises = state.exercises.filter(e => e.id !== id);
+  state.logs = state.logs.filter(l => l.exId !== id);
+  saveState();
+  renderExerciseManage();
+  toast('削除しました');
+}
+
+// ===========================================================
+// HISTORY
+// ===========================================================
+function renderHistory() {
+  document.getElementById('weekly-chart').innerHTML = renderWeeklyChart();
+
+  const wISO = isoOffset(-7);
+  const mISO = isoOffset(-30);
+  document.getElementById('cnt-week').textContent  = `${state.logs.filter(l => l.date >= wISO).length} 件`;
+  document.getElementById('cnt-month').textContent = `${state.logs.filter(l => l.date >= mISO).length} 件`;
+  document.getElementById('cnt-all').textContent   = `${state.logs.length} 件`;
+
+  const totalKg = state.logs.reduce((s, l) => s + l.actualTotal, 0);
+  const days = new Set(state.logs.map(l => l.date)).size;
+  const sets = state.logs.length;
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-cell">
+      <div class="label">日数</div>
+      <div class="value">${days}<span class="unit"> d</span></div>
+    </div>
+    <div class="stat-cell">
+      <div class="label">セット数</div>
+      <div class="value">${sets}</div>
+    </div>
+    <div class="stat-cell">
+      <div class="label">累計挙上</div>
+      <div class="value">${fmt(totalKg / 1000, 1)}<span class="unit"> t</span></div>
+    </div>`;
+
+  const list = document.getElementById('history-list');
+  const logs = [...state.logs].sort((a, b) =>
+    b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
+  if (logs.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="ico">▤</div><div class="title">記録がありません</div></div>`;
+    return;
+  }
+  const byDate = {};
+  logs.forEach(l => { (byDate[l.date] ||= []).push(l); });
+  list.innerHTML = Object.keys(byDate).sort().reverse().map(d => {
+    const dayActual = byDate[d].reduce((s, l) => s + l.actualTotal, 0);
+    const dayTarget = dailyTargetTotal(d);
+    const pct = dayTarget > 0 ? (dayActual / dayTarget) * 100 : 0;
+    const isBaselineDay = d === state.baselineDate;
+    return `
+      <div style="background:var(--bg-card); border:1px solid var(--line); border-radius:4px; padding:12px 16px; margin-bottom:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
+          <div style="font-family:var(--mono); font-size:12px; color:var(--ink-dim); letter-spacing:0.1em;">
+            ${d} ${isBaselineDay ? '<span style="color:var(--accent); font-size:10px;">[基準日]</span>' : ''}
+          </div>
+          <div style="font-family:var(--display); font-size:16px; letter-spacing:0.04em;">
+            ${fmt(dayActual,0)}<span style="color:var(--ink-faint); font-size:11px; font-family:var(--mono);"> / ${dayTarget > 0 ? fmt(dayTarget,0) : '—'} kg</span>
+            ${dayTarget > 0 ? `<span style="margin-left:8px; color:${pct >= 100 ? 'var(--accent)' : 'var(--ink-dim)'}; font-size:13px;">${fmt(pct,0)}%</span>` : ''}
+          </div>
+        </div>
+        ${byDate[d].map(l => {
+          const exName = state.exercises.find(e => e.id === l.exId)?.name || '(削除済み)';
+          return `
+            <div class="log-item">
+              <div class="left">
+                <div class="date">${escapeHtml(exName)}</div>
+                <div class="body">${fmt(l.weight,1)} kg × ${l.reps} = <b>${fmt(l.actualTotal,0)} kg</b></div>
+              </div>
+              <button class="delete-log" onclick="deleteLogFromHistory('${l.id}')">×</button>
+            </div>`;
+        }).join('')}
+      </div>`;
+  }).join('');
+}
+
+function deleteLogFromHistory(id) {
+  if (!confirm('この記録を削除しますか？')) return;
+  state.logs = state.logs.filter(l => l.id !== id);
+  saveState();
+  renderHistory();
+}
+
+function isoOffset(deltaDays) {
+  const d = new Date();
+  d.setDate(d.getDate() + deltaDays);
+  return d.toISOString().slice(0, 10);
+}
+
+/** 過去7日の棒グラフをSVGで作る */
+function renderWeeklyChart() {
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const iso = d.toISOString().slice(0, 10);
+    const wd = d.getDay();
+    const wdLabel = ['日','月','火','水','木','金','土'][wd];
+    days.push({
+      iso,
+      label: `${d.getDate()}`,
+      weekday: wdLabel,
+      actual: actualTotalOn(iso),
+      target: dailyTargetTotal(iso),
+    });
+  }
+
+  const maxVal = Math.max(
+    100,
+    ...days.map(d => Math.max(d.actual, d.target))
+  );
+
+  const W = 320, H = 200;
+  const padL = 40, padR = 8, padT = 14, padB = 32;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const barGap = 6;
+  const barW = (innerW - barGap * (days.length - 1)) / days.length;
+
+  const ticks = 4;
+  let yAxis = '';
+  for (let i = 0; i <= ticks; i++) {
+    const v = (maxVal * i) / ticks;
+    const y = padT + innerH - (v / maxVal) * innerH;
+    yAxis += `
+      <line x1="${padL}" x2="${padL + innerW}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-width="1"/>
+      <text x="${padL - 4}" y="${y + 3}" text-anchor="end" font-family="JetBrains Mono" font-size="9" fill="var(--ink-faint)">${fmt(v, 0)}</text>`;
+  }
+
+  let bars = '';
+  let targetPath = '';
+  days.forEach((d, i) => {
+    const x = padL + i * (barW + barGap);
+    const cx = x + barW / 2;
+    const h = (d.actual / maxVal) * innerH;
+    const y = padT + innerH - h;
+    const isToday = d.iso === todayISO();
+    const achieved = d.target > 0 && d.actual >= d.target;
+    const fill = state.difficulty === 'free'
+      ? '#6ab8ff'
+      : (achieved ? '#d4ff3a' : (d.actual > 0 ? 'rgba(212,255,58,0.55)' : 'transparent'));
+    const stroke = d.actual > 0 ? 'transparent' : 'var(--line-strong)';
+    bars += `
+      <rect x="${x}" y="${y}" width="${barW}" height="${h}"
+        fill="${fill}" stroke="${stroke}" stroke-width="1" rx="2"/>
+      <text x="${cx}" y="${H - 16}" text-anchor="middle" font-family="JetBrains Mono" font-size="10"
+        fill="${isToday ? 'var(--accent)' : 'var(--ink-dim)'}">${d.label}</text>
+      <text x="${cx}" y="${H - 4}" text-anchor="middle" font-family="JetBrains Mono" font-size="8"
+        fill="var(--ink-faint)">${d.weekday}</text>`;
+
+    if (d.target > 0) {
+      const ty = padT + innerH - (d.target / maxVal) * innerH;
+      targetPath += `${i === 0 ? 'M' : 'L'} ${cx} ${ty} `;
+    }
+  });
+
+  const targetLine = state.difficulty !== 'free' && targetPath
+    ? `<path d="${targetPath.trim()}" fill="none" stroke="var(--ink-dim)" stroke-width="1.5" stroke-dasharray="4 3"/>`
+    : '';
+
+  return `
+    <div class="chart-wrap">
+      <div class="chart-title">
+        <span>直近7日 / 日毎の総重量</span>
+        <span>最大 ${fmt(maxVal,0)} kg</span>
+      </div>
+      <svg class="chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+        ${yAxis}
+        ${bars}
+        ${targetLine}
+      </svg>
+      <div class="chart-legend">
+        <span><span class="swatch legend-actual"></span>実績</span>
+        ${state.difficulty !== 'free' ? '<span><span class="swatch legend-target"></span>目標</span>' : ''}
+      </div>
+    </div>`;
+}
+
+// ===========================================================
+// EXPORT / IMPORT
+// ===========================================================
+function exportCSV(range) {
+  let logs = [...state.logs];
+  if (range === 'week') {
+    const fromISO = isoOffset(-7);
+    logs = logs.filter(l => l.date >= fromISO);
+  } else if (range === 'month') {
+    const fromISO = isoOffset(-30);
+    logs = logs.filter(l => l.date >= fromISO);
+  }
+  logs.sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt);
+  if (logs.length === 0) { alert('対象期間に記録がありません。'); return; }
+
+  const setHeader = 'date,exercise,weight_kg,reps,set_total_kg';
+  const setRows = logs.map(l => {
+    const name = (state.exercises.find(e => e.id === l.exId)?.name || '').replace(/,/g, ' ');
+    return [l.date, name, fmt(l.weight, 2), l.reps, fmt(l.actualTotal, 2)].join(',');
+  });
+
+  const byDate = {};
+  logs.forEach(l => { (byDate[l.date] ||= []).push(l); });
+  const dayHeader = 'date,daily_total_kg,daily_target_kg,achievement_pct,sets,exercises';
+  const dayRows = Object.keys(byDate).sort().map(d => {
+    const ls = byDate[d];
+    const total = ls.reduce((s, l) => s + l.actualTotal, 0);
+    const target = dailyTargetTotal(d);
+    const pct = target > 0 ? (total / target) * 100 : 0;
+    const exNames = [...new Set(ls.map(l =>
+      state.exercises.find(e => e.id === l.exId)?.name || ''
+    ).filter(Boolean))].join('|');
+    return [d, fmt(total, 2), fmt(target, 2), fmt(pct, 1), ls.length, exNames].join(',');
+  });
+
+  const csv = [
+    '# === Daily Summary ===',
+    dayHeader,
+    ...dayRows,
+    '',
+    '# === Sets ===',
+    setHeader,
+    ...setRows,
+  ].join('\n');
+
+  const stamp = todayISO().replace(/-/g, '');
+  download(`gym_log_${range}_${stamp}.csv`, csv, 'text/csv');
+}
+
+function exportJSON() {
+  const data = JSON.stringify(state, null, 2);
+  const stamp = todayISO().replace(/-/g, '');
+  download(`gymgoal_backup_${stamp}.json`, data, 'application/json');
+}
+
+function importJSON(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.exercises || !data.logs) throw new Error('invalid format');
+      if (!confirm('現在のデータを上書きします。よろしいですか？')) {
+        ev.target.value = '';
+        return;
+      }
+      state = {
+        exercises: data.exercises,
+        logs: data.logs,
+        difficulty: data.difficulty || 'intermediate',
+        baselineDate: data.baselineDate || null,
+        baselineTotal: data.baselineTotal || 0,
+        onboarded: data.onboarded !== false,
+      };
+      saveState();
+      applyFreeMode();
+      toast('インポート完了');
+      renderSettings();
+      ev.target.value = '';
+    } catch (err) {
+      alert('インポートに失敗しました: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function download(filename, content, mime) {
+  const blob = new Blob([content], { type: mime + ';charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ===========================================================
+// SETTINGS
+// ===========================================================
+function renderSettings() {
+  const el = document.getElementById('diff-options');
+  el.innerHTML = Object.entries(DIFFICULTIES).map(([key, d]) => {
+    const cls = state.difficulty === key
+      ? `selected ${d.isFree ? 'free' : ''}`
+      : '';
+    const params = d.isFree ? '— ' : `+${(d.daily*100).toFixed(1)}% per day`;
+    return `
+      <div class="diff-option ${cls}" onclick="setDifficulty('${key}')">
+        <div class="head">
+          <div class="name">${d.name}</div>
+          <div class="params">${params}</div>
+        </div>
+        <div class="desc">${d.desc}</div>
+      </div>`;
+  }).join('');
+
+  const bi = document.getElementById('baseline-info');
+  if (state.baselineDate) {
+    const days = daysBetween(state.baselineDate, todayISO());
+    const today = dailyTargetTotal(todayISO());
+    bi.innerHTML = `
+      <div style="background:var(--bg-card); border:1px solid var(--line); border-radius:4px; padding:14px 16px;">
+        <div style="font-family:var(--mono); font-size:11px; color:var(--ink-dim); letter-spacing:0.15em; text-transform:uppercase; margin-bottom:6px;">基準値</div>
+        <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom: 4px;">
+          <span style="color:var(--ink-dim);">基準日</span>
+          <span style="font-family:var(--mono);">${state.baselineDate} (${days}日前)</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom: 4px;">
+          <span style="color:var(--ink-dim);">基準総重量</span>
+          <span style="font-family:var(--mono);">${fmt(state.baselineTotal, 0)} kg</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:14px;">
+          <span style="color:var(--ink-dim);">今日の目標</span>
+          <span style="font-family:var(--mono); color:var(--accent);">
+            ${state.difficulty === 'free' ? '— (フリー)' : fmt(today, 0) + ' kg'}
+          </span>
+        </div>
+      </div>`;
+  } else {
+    bi.innerHTML = `<div class="helper">まだ基準値が設定されていません。</div>`;
+  }
+}
+
+function setDifficulty(key) {
+  state.difficulty = key;
+  saveState();
+  applyFreeMode();
+  renderSettings();
+  document.getElementById('diff-badge-text').textContent = DIFFICULTIES[key].name;
+  toast(`難易度: ${DIFFICULTIES[key].name}`);
+}
+
+function resetLogs() {
+  if (!confirm('すべての記録を削除しますか？\n種目と基準値は残ります。')) return;
+  state.logs = [];
+  saveState();
+  toast('記録を削除しました');
+  renderSettings();
+}
+
+function resetAll() {
+  if (!confirm('種目・記録・基準値・設定すべてを削除します。本当によろしいですか？')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  state = loadState();
+  saveState();
+  applyFreeMode();
+  startOnboarding();
+}
+
+// ===========================================================
+// bindings + init
+// ===========================================================
+document.getElementById('detail-weight').addEventListener('input', updateRepsResult);
+document.getElementById('add-modal').addEventListener('click', e => {
+  if (e.target.id === 'add-modal') closeAddExercise();
+});
+
+applyFreeMode();
+if (!state.onboarded) {
+  startOnboarding();
+} else {
+  document.getElementById('diff-badge-text').textContent = DIFFICULTIES[state.difficulty].name;
+  renderHome();
+}
+</script>
+</body>
+</html>

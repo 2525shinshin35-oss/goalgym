@@ -635,39 +635,78 @@
   }
   .ob-step { display: none; }
   .ob-step.active { display: block; animation: fade 0.25s ease; }
-  .ob-set-row {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr auto;
-    gap: 8px;
-    margin-bottom: 8px;
-    align-items: stretch;
-  }
-  .ob-set-row input {
+  /* onboarding exercise block */
+  .ob-ex-block {
     background: var(--bg-card);
     border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .ob-ex-header {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .ob-ex-header input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
     color: var(--ink);
     padding: 10px 12px;
+    border-radius: 4px;
+    font-family: var(--body);
+    font-size: 15px;
+    font-weight: 700;
+    outline: none;
+    width: 100%;
+  }
+  .ob-ex-header input:focus { border-color: var(--accent); }
+  .ob-weight-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto 1fr auto;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 6px;
+    padding-left: 4px;
+  }
+  .ob-weight-row input {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 8px 10px;
     border-radius: 4px;
     font-family: var(--mono);
     font-size: 14px;
     outline: none;
     width: 100%;
   }
-  .ob-set-row input:focus { border-color: var(--accent); }
-  .ob-set-row .delete-btn { width: 40px; height: 40px; }
-  .ob-headers {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr auto;
-    gap: 8px;
+  .ob-weight-row input:focus { border-color: var(--accent); }
+  .ob-tree-line {
+    color: var(--ink-faint);
     font-family: var(--mono);
-    font-size: 10px;
-    color: var(--ink-dim);
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 6px;
-    padding: 0 4px;
+    font-size: 16px;
+    user-select: none;
   }
-  .ob-headers > span:last-child { width: 40px; }
+  .ob-times {
+    color: var(--ink-faint);
+    font-family: var(--mono);
+    font-size: 13px;
+    text-align: center;
+    user-select: none;
+  }
+  .ob-add-weight-link {
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 0 0 28px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+  .ob-add-weight-link:hover { color: var(--accent); }
   .ob-add-link {
     background: none;
     border: 1px dashed var(--line-strong);
@@ -894,6 +933,79 @@
     margin-top: 6px;
   }
   hr { border: none; border-top: 1px solid var(--line); margin: 20px 0; }
+
+  /* ---------- weight chips ---------- */
+  .weight-chips-wrap { margin-bottom: 14px; }
+  .weight-chips-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .weight-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .weight-chip {
+    background: var(--bg-card);
+    border: 1px solid var(--line-strong);
+    color: var(--ink);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-family: var(--mono);
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .weight-chip:hover { border-color: var(--accent); color: var(--accent); }
+  body.free-mode .weight-chip:hover { border-color: var(--free); color: var(--free); }
+
+  /* ---------- detail set rows ---------- */
+  .detail-sets-header {
+    display: grid;
+    grid-template-columns: 1.2fr 0.7fr 1fr auto;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    padding: 0 2px;
+  }
+  .detail-sets-header > span:last-child { width: 36px; }
+  .detail-set-row {
+    display: grid;
+    grid-template-columns: 1.2fr 0.7fr 1fr auto;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+  .detail-set-row input {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 10px 12px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 14px;
+    outline: none;
+    width: 100%;
+  }
+  .detail-set-row input:focus { border-color: var(--accent); }
+  body.free-mode .detail-set-row input:focus { border-color: var(--free); }
+  .detail-set-row .sugg {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--ink-faint);
+    text-align: center;
+    padding: 10px 4px;
+    border-radius: 4px;
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+  }
+  .detail-set-row .sugg.has-val { color: var(--accent); font-weight: 600; border-color: rgba(212,255,58,0.3); }
+  body.free-mode .detail-set-row .sugg.has-val { color: var(--free); border-color: rgba(106,184,255,0.3); }
+  .detail-set-row .sugg.done { color: var(--ink-faint); font-size: 11px; }
 </style>
 </head>
 <body>
@@ -917,25 +1029,17 @@
 
     <div class="remaining-box" id="remaining-box"></div>
 
-    <div class="input-group">
-      <label>使う重量 (kg)</label>
-      <input type="number" id="detail-weight" inputmode="decimal" placeholder="例: 60" step="0.5" />
-    </div>
+    <!-- よく使う重量チップ -->
+    <div id="detail-weight-chips"></div>
 
-    <div class="reps-result" id="detail-reps-result">
-      <div>
-        <div class="lab">必要 rep 数</div>
-        <div class="formula" id="detail-formula">重量を入力してください</div>
-      </div>
-      <div><span class="val" id="detail-reps">—</span><span class="unit">REPS</span></div>
+    <!-- 複数セット入力 -->
+    <div class="detail-sets-header">
+      <span>重量 (kg)</span><span>推奨reps</span><span>実際reps</span><span></span>
     </div>
+    <div id="detail-sets-wrap"></div>
+    <button class="ob-add-link" onclick="addDetailSet()" style="margin-bottom:14px;">＋ セットを追加</button>
 
-    <div class="input-group">
-      <label>実際にやった rep 数（既定: 必要 rep 数）</label>
-      <input type="number" id="detail-actual-reps" inputmode="numeric" />
-    </div>
-
-    <button class="btn" id="detail-save-btn" onclick="saveLog()">この種目を記録する</button>
+    <button class="btn" id="detail-save-btn" onclick="saveAllSets()">記録する</button>
 
     <div id="detail-history" style="margin-top: 24px;"></div>
   </section>
@@ -1086,14 +1190,8 @@
         後から種目の追加・削除はいつでもできます。
       </p>
 
-      <div class="ob-headers">
-        <span>種目名</span>
-        <span>重量(kg)</span>
-        <span>rep 数</span>
-        <span></span>
-      </div>
       <div id="ob-sets"></div>
-      <button class="ob-add-link" onclick="obAddSet()">＋ もう1種目追加</button>
+      <button class="ob-add-link" onclick="obAddExercise()" style="margin-top:4px;">＋ 種目を追加</button>
 
       <div class="ob-nav">
         <button class="btn secondary" onclick="obShowStep(1)">戻る</button>
@@ -1149,6 +1247,7 @@
    =========================================================== */
 
 const STORAGE_KEY = 'gymgoal.v2';
+const DRAFT_KEY   = 'gymgoal.v2.draft';
 
 const DIFFICULTIES = {
   beginner:     { name: '初心者', daily: 0.005, desc: 'ゆっくり伸ばす（+0.5%/日）', isFree: false },
@@ -1175,6 +1274,21 @@ function loadState() {
 }
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+// ---------- onboarding draft ----------
+function saveDraft() {
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(obSets)); } catch(e) {}
+}
+function loadDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return null;
+}
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
 }
 
 // ---------- helpers ----------
@@ -1254,17 +1368,32 @@ function showPage(name) {
 // ===========================================================
 // ONBOARDING
 // ===========================================================
+// obSets: [{name: '', entries: [{weight: '', reps: ''}]}]
 let obSets = [];
 let obBaseline = 0;
 
 function startOnboarding(prefill = false) {
   if (prefill && state.exercises.length > 0) {
-    obSets = state.exercises.slice(0, 5).map(ex => ({ name: ex.name, weight: '', reps: '' }));
+    // 再設定: 既存種目をプリフィル
+    obSets = state.exercises.slice(0, 5).map(ex => {
+      const weights = ex.savedWeights || [];
+      const entries = weights.length > 0
+        ? weights.map(w => ({ weight: String(w), reps: '' }))
+        : [{ weight: '', reps: '' }];
+      return { name: ex.name, entries };
+    });
+    clearDraft();
   } else {
-    obSets = [
-      { name: '', weight: '', reps: '' },
-      { name: '', weight: '', reps: '' },
-    ];
+    // 初回: 下書きがあれば復元
+    const draft = loadDraft();
+    if (draft && Array.isArray(draft) && draft.length > 0) {
+      obSets = draft;
+    } else {
+      obSets = [
+        { name: '', entries: [{ weight: '', reps: '' }] },
+        { name: '', entries: [{ weight: '', reps: '' }] },
+      ];
+    }
   }
   document.getElementById('onboarding').classList.add('open');
   obShowStep(1);
@@ -1280,36 +1409,67 @@ function obShowStep(n) {
 
 function renderObSets() {
   const wrap = document.getElementById('ob-sets');
-  wrap.innerHTML = obSets.map((s, i) => `
-    <div class="ob-set-row">
-      <input type="text" placeholder="種目名" value="${escapeHtml(s.name)}"
-        oninput="obSets[${i}].name=this.value" />
-      <input type="number" placeholder="kg" inputmode="decimal" step="0.5" value="${s.weight}"
-        oninput="obSets[${i}].weight=this.value" />
-      <input type="number" placeholder="reps" inputmode="numeric" value="${s.reps}"
-        oninput="obSets[${i}].reps=this.value" />
-      <button class="delete-btn" onclick="obRemoveSet(${i})">×</button>
+  wrap.innerHTML = obSets.map((ex, i) => `
+    <div class="ob-ex-block">
+      <div class="ob-ex-header">
+        <input type="text" placeholder="種目名（例: ベンチプレス）" value="${escapeHtml(ex.name)}"
+          oninput="obSets[${i}].name = this.value; saveDraft();" />
+        <button class="delete-btn" onclick="obRemoveExercise(${i})">×</button>
+      </div>
+      ${ex.entries.map((e, j) => `
+        <div class="ob-weight-row">
+          <span class="ob-tree-line">└</span>
+          <input type="number" placeholder="kg" inputmode="decimal" step="0.5" value="${escapeHtml(String(e.weight))}"
+            oninput="obSets[${i}].entries[${j}].weight = this.value; saveDraft();" />
+          <span class="ob-times">×</span>
+          <input type="number" placeholder="reps" inputmode="numeric" value="${escapeHtml(String(e.reps))}"
+            oninput="obSets[${i}].entries[${j}].reps = this.value; saveDraft();" />
+          <button class="delete-btn" style="width:32px;height:32px;" onclick="obRemoveWeight(${i},${j})">×</button>
+        </div>
+      `).join('')}
+      <button class="ob-add-weight-link" onclick="obAddWeight(${i})">＋ 重量を追加</button>
     </div>
   `).join('');
 }
-function obAddSet() {
-  obSets.push({ name: '', weight: '', reps: '' });
+
+function obAddExercise() {
+  obSets.push({ name: '', entries: [{ weight: '', reps: '' }] });
+  saveDraft();
   renderObSets();
 }
-function obRemoveSet(i) {
+function obRemoveExercise(i) {
   if (obSets.length <= 1) return;
   obSets.splice(i, 1);
+  saveDraft();
+  renderObSets();
+}
+function obAddWeight(i) {
+  obSets[i].entries.push({ weight: '', reps: '' });
+  saveDraft();
+  renderObSets();
+}
+function obRemoveWeight(i, j) {
+  if (obSets[i].entries.length <= 1) return;
+  obSets[i].entries.splice(j, 1);
+  saveDraft();
   renderObSets();
 }
 
 function obToStep3() {
-  const valid = obSets.filter(s => s.name.trim() && parseFloat(s.weight) > 0 && parseInt(s.reps,10) > 0);
+  const valid = [];
+  for (const ex of obSets) {
+    if (!ex.name.trim()) continue;
+    for (const e of ex.entries) {
+      const w = parseFloat(e.weight);
+      const r = parseInt(e.reps, 10);
+      if (w > 0 && r > 0) valid.push({ name: ex.name.trim(), w, r });
+    }
+  }
   if (valid.length === 0) {
     alert('1つ以上、種目名・重量・rep 数 をすべて入力してください。');
     return;
   }
-  obBaseline = valid.reduce((sum, s) =>
-    sum + parseFloat(s.weight) * parseInt(s.reps, 10), 0);
+  obBaseline = valid.reduce((sum, v) => sum + v.w * v.r, 0);
 
   document.getElementById('ob-baseline').textContent = fmt(obBaseline, 0);
   renderObProjection();
@@ -1356,41 +1516,61 @@ function obToStep4() {
 }
 
 function obFinish() {
-  const valid = obSets.filter(s => s.name.trim() && parseFloat(s.weight) > 0 && parseInt(s.reps,10) > 0);
-  const today = todayISO();
+  // 有効なエントリを収集
+  const validExercises = [];
+  for (const ex of obSets) {
+    if (!ex.name.trim()) continue;
+    const validEntries = ex.entries.filter(e => parseFloat(e.weight) > 0 && parseInt(e.reps, 10) > 0);
+    if (validEntries.length > 0) validExercises.push({ name: ex.name.trim(), entries: validEntries });
+  }
 
-  // create new exercises (preserve existing ones)
+  const today = todayISO();
   const existingNames = new Set(state.exercises.map(e => e.name));
-  for (const s of valid) {
-    if (!existingNames.has(s.name.trim())) {
+
+  for (const v of validExercises) {
+    const weights = [...new Set(v.entries.map(e => parseFloat(e.weight)))].sort((a, b) => a - b);
+    if (!existingNames.has(v.name)) {
       state.exercises.push({
         id: uid(),
-        name: s.name.trim(),
+        name: v.name,
         notes: '',
+        savedWeights: weights,
         createdAt: Date.now(),
       });
+    } else {
+      // 既存種目のsavedWeightsを更新
+      const ex = state.exercises.find(e => e.name === v.name);
+      if (ex) {
+        ex.savedWeights = ex.savedWeights || [];
+        for (const w of weights) {
+          if (!ex.savedWeights.includes(w)) ex.savedWeights.push(w);
+        }
+        ex.savedWeights.sort((a, b) => a - b);
+        if (ex.savedWeights.length > 8) ex.savedWeights = ex.savedWeights.slice(-8);
+      }
     }
   }
 
-  // remove logs from today's date if re-onboarding (avoid duplicates)
+  // 再オンボーディング時は当日ログを上書き
   state.logs = state.logs.filter(l => l.date !== today);
 
-  // insert today's logs
-  for (const s of valid) {
-    const ex = state.exercises.find(e => e.name === s.name.trim());
+  for (const v of validExercises) {
+    const ex = state.exercises.find(e => e.name === v.name);
     if (!ex) continue;
-    const w = parseFloat(s.weight);
-    const r = parseInt(s.reps, 10);
-    state.logs.push({
-      id: uid(),
-      exId: ex.id,
-      date: today,
-      weight: w,
-      reps: r,
-      targetTotal: 0,
-      actualTotal: w * r,
-      createdAt: Date.now(),
-    });
+    for (const e of v.entries) {
+      const w = parseFloat(e.weight);
+      const r = parseInt(e.reps, 10);
+      state.logs.push({
+        id: uid(),
+        exId: ex.id,
+        date: today,
+        weight: w,
+        reps: r,
+        targetTotal: 0,
+        actualTotal: w * r,
+        createdAt: Date.now(),
+      });
+    }
   }
 
   state.baselineDate = today;
@@ -1398,6 +1578,7 @@ function obFinish() {
   state.onboarded = true;
 
   saveState();
+  clearDraft();
   applyFreeMode();
   document.getElementById('onboarding').classList.remove('open');
   document.getElementById('diff-badge-text').textContent = DIFFICULTIES[state.difficulty].name;
@@ -1506,10 +1687,11 @@ function renderHome() {
 // ===========================================================
 // EXERCISE DETAIL
 // ===========================================================
+let detailSets = [];
+
 function openDetail(exId) {
   currentDetailExId = exId;
-  document.getElementById('detail-weight').value = '';
-  document.getElementById('detail-actual-reps').value = '';
+  detailSets = [{ weight: '', reps: '' }];
   showPage('detail');
   renderDetail();
 }
@@ -1544,7 +1726,8 @@ function renderDetail() {
       <div class="sub">本日 ${fmt(actual, 0)} / ${fmt(target, 0)} kg まで完了</div>`;
   }
 
-  updateRepsResult();
+  renderWeightChips(ex);
+  renderDetailSets();
 
   const logs = state.logs
     .filter(l => l.exId === ex.id)
@@ -1571,85 +1754,135 @@ function renderDetail() {
   }
 }
 
-function updateRepsResult() {
-  const isFree = state.difficulty === 'free';
-  const today = todayISO();
-  const remaining = remainingFor(today);
-  const w = parseFloat(document.getElementById('detail-weight').value);
-  const result = document.getElementById('detail-reps-result');
-  const repsEl = document.getElementById('detail-reps');
-  const formula = document.getElementById('detail-formula');
-
-  if (!w || w <= 0) {
-    result.classList.add('empty');
-    repsEl.textContent = '—';
-    formula.textContent = '重量を入力してください';
-    document.getElementById('detail-save-btn').disabled = true;
-    return;
-  }
-  document.getElementById('detail-save-btn').disabled = false;
-
-  if (isFree) {
-    result.classList.add('empty');
-    repsEl.textContent = '—';
-    formula.textContent = `フリーモード: 任意の rep 数で記録してください`;
-    return;
-  }
-
-  if (remaining <= 0) {
-    result.classList.add('empty');
-    repsEl.textContent = '0';
-    formula.textContent = '今日の目標は既に達成済みです（追加で記録は可能）';
-    return;
-  }
-
-  const reps = requiredReps(w, remaining);
-  result.classList.remove('empty');
-  repsEl.textContent = reps;
-  formula.textContent = `${fmt(w,1)} kg × ${reps} reps = ${fmt(w*reps,1)} kg ≧ 残り ${fmt(remaining,0)} kg`;
+function renderWeightChips(ex) {
+  const wrap = document.getElementById('detail-weight-chips');
+  const weights = ex.savedWeights || [];
+  if (weights.length === 0) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = `
+    <div class="weight-chips-wrap">
+      <div class="weight-chips-label">よく使う重量 (タップで追加)</div>
+      <div class="weight-chips">
+        ${weights.map(w => `<button class="weight-chip" onclick="addDetailSet(${w})">${w} kg</button>`).join('')}
+      </div>
+    </div>`;
 }
 
-function saveLog() {
+function calcSuggestedReps(setIndex) {
+  if (state.difficulty === 'free') return null;
+  const today = todayISO();
+  const target = dailyTargetTotal(today);
+  const actual = actualTotalOn(today);
+  const prevTotal = detailSets.slice(0, setIndex).reduce((sum, s) => {
+    const w = parseFloat(s.weight);
+    const r = parseInt(s.reps || '0', 10);
+    return sum + (w > 0 && r > 0 ? w * r : 0);
+  }, 0);
+  const remaining = Math.max(0, target - actual - prevTotal);
+  const w = parseFloat(detailSets[setIndex]?.weight);
+  if (!w || w <= 0) return null;
+  if (remaining <= 0) return 0;
+  return Math.ceil(remaining / w);
+}
+
+function renderDetailSets() {
+  const wrap = document.getElementById('detail-sets-wrap');
+  wrap.innerHTML = detailSets.map((s, i) => {
+    const sugg = calcSuggestedReps(i);
+    const suggText = sugg === null ? '—' : (sugg === 0 ? '✓' : String(sugg));
+    const suggCls = sugg > 0 ? 'has-val' : (sugg === 0 ? 'done' : '');
+    return `
+      <div class="detail-set-row">
+        <input type="number" inputmode="decimal" step="0.5" placeholder="例: 60"
+          value="${escapeHtml(String(s.weight))}"
+          oninput="updateDetailSetWeight(${i}, this.value)" />
+        <div class="sugg ${suggCls}" id="sugg-${i}">${suggText}</div>
+        <input type="number" inputmode="numeric" placeholder="reps"
+          value="${escapeHtml(String(s.reps))}"
+          oninput="updateDetailSetReps(${i}, this.value)" />
+        <button class="delete-btn" onclick="removeDetailSet(${i})">×</button>
+      </div>`;
+  }).join('');
+}
+
+function updateSuggestions() {
+  detailSets.forEach((s, i) => {
+    const el = document.getElementById(`sugg-${i}`);
+    if (!el) return;
+    const sugg = calcSuggestedReps(i);
+    const suggText = sugg === null ? '—' : (sugg === 0 ? '✓' : String(sugg));
+    el.textContent = suggText;
+    el.className = 'sugg' + (sugg > 0 ? ' has-val' : sugg === 0 ? ' done' : '');
+  });
+}
+
+function updateDetailSetWeight(i, value) {
+  detailSets[i].weight = value;
+  updateSuggestions();
+}
+
+function updateDetailSetReps(i, value) {
+  detailSets[i].reps = value;
+  updateSuggestions();
+}
+
+function addDetailSet(weight) {
+  detailSets.push({ weight: weight !== undefined ? String(weight) : '', reps: '' });
+  renderDetailSets();
+  // scroll to the new row
+  document.getElementById('detail-sets-wrap').lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function removeDetailSet(i) {
+  if (detailSets.length <= 1) {
+    detailSets[0] = { weight: '', reps: '' };
+  } else {
+    detailSets.splice(i, 1);
+  }
+  renderDetailSets();
+}
+
+function saveAllSets() {
   const ex = state.exercises.find(e => e.id === currentDetailExId);
   if (!ex) return;
-  const w = parseFloat(document.getElementById('detail-weight').value);
-  if (!w || w <= 0) return;
 
   const today = todayISO();
-  const remaining = remainingFor(today);
-  const requiredR = requiredReps(w, remaining);
-  const actualRRaw = document.getElementById('detail-actual-reps').value;
+  const filledSets = detailSets.map((s, i) => {
+    const w = parseFloat(s.weight);
+    const sugg = calcSuggestedReps(i);
+    // repsが空の場合は推奨repsを使う（フリーモードや推奨0の場合は必須入力）
+    let r = s.reps !== '' ? parseInt(s.reps, 10) : (sugg > 0 ? sugg : NaN);
+    return { w, r };
+  }).filter(({ w, r }) => w > 0 && Number.isFinite(r) && r > 0);
 
-  let actualR;
-  if (actualRRaw !== '') {
-    actualR = parseInt(actualRRaw, 10);
-  } else if (state.difficulty === 'free' || requiredR <= 0) {
-    alert('rep 数を入力してください。');
-    return;
-  } else {
-    actualR = requiredR;
-  }
-
-  if (!Number.isFinite(actualR) || actualR <= 0) {
-    alert('有効な rep 数を入力してください。');
+  if (filledSets.length === 0) {
+    alert('重量と rep 数を入力してください。\n（rep 数が空の場合は推奨値が自動入力されます）');
     return;
   }
 
-  state.logs.push({
-    id: uid(),
-    exId: ex.id,
-    date: today,
-    weight: w,
-    reps: actualR,
-    targetTotal: dailyTargetTotal(today),
-    actualTotal: w * actualR,
-    createdAt: Date.now(),
-  });
+  for (const { w, r } of filledSets) {
+    state.logs.push({
+      id: uid(),
+      exId: ex.id,
+      date: today,
+      weight: w,
+      reps: r,
+      targetTotal: dailyTargetTotal(today),
+      actualTotal: w * r,
+      createdAt: Date.now(),
+    });
+
+    // 使った重量を種目に記憶する
+    if (!ex.savedWeights) ex.savedWeights = [];
+    if (!ex.savedWeights.includes(w)) {
+      ex.savedWeights.push(w);
+      ex.savedWeights.sort((a, b) => a - b);
+      if (ex.savedWeights.length > 8) ex.savedWeights.shift();
+    }
+  }
+
   saveState();
-  toast('記録しました');
-
-  document.getElementById('detail-weight').value = '';
-  document.getElementById('detail-actual-reps').value = '';
+  toast(`${filledSets.length} セット記録しました`);
+  detailSets = [{ weight: '', reps: '' }];
   renderDetail();
 }
 
@@ -2065,6 +2298,7 @@ function resetLogs() {
 function resetAll() {
   if (!confirm('種目・記録・基準値・設定すべてを削除します。本当によろしいですか？')) return;
   localStorage.removeItem(STORAGE_KEY);
+  clearDraft();
   state = loadState();
   saveState();
   applyFreeMode();
@@ -2074,7 +2308,6 @@ function resetAll() {
 // ===========================================================
 // bindings + init
 // ===========================================================
-document.getElementById('detail-weight').addEventListener('input', updateRepsResult);
 document.getElementById('add-modal').addEventListener('click', e => {
   if (e.target.id === 'add-modal') closeAddExercise();
 });
